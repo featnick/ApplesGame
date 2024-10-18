@@ -12,28 +12,7 @@ namespace AppleGame
 		text.setString(string);
 	}
 
-	void ShaffleRecordArray(UI& ui)
-	{
-		for (int i = 0; i < 20; ++i)
-		{
-			int firstElement = GetRandomInt(1, 14);
-			int secondElement = GetRandomInt(1, 14);
-			while (firstElement == secondElement)
-			{
-				secondElement = GetRandomInt(1, 14);
-			}
-			int temp = ui.playersRecords[firstElement].record;
-			std::string tempS = ui.playersRecords[firstElement].name;
-
-			ui.playersRecords[firstElement].record = ui.playersRecords[secondElement].record;
-			ui.playersRecords[firstElement].name = ui.playersRecords[secondElement].name;
-
-			ui.playersRecords[secondElement].record = temp;
-			ui.playersRecords[secondElement].name = tempS;
-		}
-	}
-
-	void InitUI(UI& ui)
+	void InitUI(UI& ui, Game* game)
 	{
 		ui.font.loadFromFile(RESOURCES_PATH + "Fonts/Roboto-Black.ttf");
 
@@ -52,77 +31,74 @@ namespace AppleGame
 		//init fps text
 		InitText(ui.fpsText, ui.font, sf::Color::White, "0", 15, 6.f, 30.f);
 
-		//init menu title
-		InitText(ui.menuTitle, ui.font, sf::Color::White, "MENU", 50, SCREEN_WIDTH / 2.f, 100.f);
-		ui.menuTitle.setOrigin(75,1);
-
-		//init menu text (mode selector)
-		InitText(ui.firstModeText, ui.font, sf::Color::White, "END_APPLES mode - 1 \nENDLESS_APPLES mode - 2", 30, SCREEN_WIDTH / 2.f, 300.f);
-		ui.firstModeText.setOrigin(190, 1);
-
-		//init second menu text
-		InitText(ui.secondModeText, ui.font, sf::Color::White, "NO_ACCELERATION mode - 1 \nACCELERATION mode - 2", 30, SCREEN_WIDTH / 2.f, 300.f);
-		ui.secondModeText.setOrigin(190, 1);
+		//init menu
+		InitText(ui.menuTitle, ui.font, sf::Color::White, "MENU", 50, 320.f, 100.f);
+		InitText(ui.menuText, ui.font, sf::Color::White, "1 - Play \n2 - Game mode \n3 - Record table \n4 - Exit", 35, 270.f, 200.f);
 
 		//init victory text
 		InitText(ui.victoryText, ui.font, sf::Color::Yellow, "You won!", 40, 300.f, 200.f);
 	
 		//init record table text
-		InitText(ui.namesText, ui.font, sf::Color::White, ui.stringNames, 15, 650.f, 27.5f);
-		InitText(ui.recordsText, ui.font, sf::Color::White, ui.stringRecords, 15, 750.f, 27.5f);
-		InitText(ui.recordTableText, ui.font, sf::Color::White, "RECORD TABLE: \n1.\n2.\n3.\n4.\n5.", 15, 600.f, 10.f);
-		ShaffleRecordArray(ui);
+		InitText(ui.recordTableText, ui.font, sf::Color::White, "RECORD TABLE: \n1.\n2.\n3.\n4.\n5.", 45, 250.f, 50.f);
+		InitText(ui.recordsText, ui.font, sf::Color::Yellow, "", 45, 320, 100.f);
+
+		//init mode settings text
+		InitText(ui.modeSettingsText1, ui.font, sf::Color::White, "1 - Endless apples: ", 45, 120.f, 50.f);
+		InitText(ui.modeSettingsText2, ui.font, sf::Color::White, "2 - Accelerate player: ", 45, 120.f, 130.f);
+		InitText(ui.activeModeText1, ui.font, sf::Color::White, "", 45, 650.f, 50.f);
+		InitText(ui.activeModeText2, ui.font, sf::Color::White, "", 45, 650.f, 130.f);
+
+		InitText(ui.backToMenuText, ui.font, sf::Color::White, "Press 'b' or 'Escape' to return to the menu", 20, 50.f, 530.f);
+
+		//init pause menu
+		InitText(ui.pauseMenuText, ui.font, sf::Color::White, "\tPause\n1 - resume\n2 - exit to menu", 30, 320.f, 210.f);
+		ui.pauseBackground.setFillColor(sf::Color::Blue);
+		ui.pauseBackground.setPosition(300.f, 200.f);
+		ui.pauseBackground.setSize({ 250.f, 150.f });
+		
 	}
 
-	void UpdateRecordTable(UI& ui, const struct Game& game)
+	void UpdateRecordTable(UI& ui, Game* game)
 	{
-		//sort
-		for (int i = 0; i < NUM_RECORD_VALUES; ++i)
+		auto playerRecord = ui.records.find(PLAYER_NAME);
+		playerRecord->second = game->numEatenApples; //set the number of points for player
+		ui.recordsTable.clear(); //clear the table
+		for (auto it : ui.records)
 		{
-			for (int j = NUM_RECORD_VALUES - 1; j > 0; --j)
-			{
-				if (ui.playersRecords[j].record > ui.playersRecords[j - 1].record)
-				{
-					int temp = ui.playersRecords[j].record;
-					std::string tempS = ui.playersRecords[j].name;
-
-					ui.playersRecords[j].record = ui.playersRecords[j - 1].record;
-					ui.playersRecords[j].name = ui.playersRecords[j - 1].name;
-
-					ui.playersRecords[j - 1].record = temp;
-					ui.playersRecords[j - 1].name = tempS;
-				}
-			}
+			ui.recordsTable.insert({ it.second,it.first }); //fill the table so that the autosorting is by the number of points
 		}
-		//update string
-		ui.stringNames = "";
-		ui.stringRecords = "";
-		for (int i = 0; i < NUM_RECORD_VALUES; ++i)
+		ui.recordsString = "";
+		for (auto it = ui.recordsTable.rbegin(); it != ui.recordsTable.rend(); ++it)
 		{
-			ui.stringNames += ui.playersRecords[i].name + "\n";
-			ui.stringRecords += std::to_string(ui.playersRecords[i].record) + "\n";
+			ui.recordsString += it->second + ": " + std::to_string(it->first) + "\n";
 		}
-		ui.namesText.setString(ui.stringNames);
-		ui.recordsText.setString(ui.stringRecords);
+		ui.recordsText.setString(ui.recordsString);
 	}
 
-	void UpdateUI(UI& ui, const struct Game& game)
+	void UpdateSettingsUI(UI& ui, Game& game)
 	{
-		for (int i = 0; i < NUM_RECORD_VALUES; ++i)
-		{
-			if (ui.playersRecords[i].name == PLAYER_NAME) //find player in record table
-			{
-				if (ui.playersRecords[i].record < game.numEatenApples || ui.playersRecords[i].record == 0)
-				{
-					ui.playersRecords[i].record = game.numEatenApples;
-					UpdateRecordTable(ui, game);
-				}
-			}
-		}
+		ui.activeModeText1.setString(ModeActive(game, GameSettingsBits::endlessApples) ? "On" : "Off");
+		ui.activeModeText2.setString(ModeActive(game, GameSettingsBits::acceleratePlayer) ? "On" : "Off");
+	}
 
+	void UpdateUI(UI& ui, Game& game)
+	{
 		ui.scoreText.setString("Apples eaten: " + std::to_string(game.numEatenApples)); //Score text
 
 		ui.fpsText.setString("fps: " + std::to_string(game.fps)); //fps text
+	}
+
+	void DrawPauseMenu(UI& ui, sf::RenderWindow& window)
+	{
+		window.draw(ui.pauseBackground);
+		window.draw(ui.pauseMenuText);
+	}
+
+	void DrawRecordTable(UI& ui, sf::RenderWindow& window)
+	{
+		window.draw(ui.recordTableText);
+		window.draw(ui.recordsText);
+		window.draw(ui.backToMenuText);
 	}
 
 	void DrawGameUI(UI& ui, sf::RenderWindow& window)
@@ -130,9 +106,6 @@ namespace AppleGame
 		window.draw(ui.closeText);
 		window.draw(ui.scoreText);
 		window.draw(ui.fpsText);
-		window.draw(ui.namesText);
-		window.draw(ui.recordsText);
-		window.draw(ui.recordTableText);
 	}
 
 	void DrawGameOverUI(UI& ui, sf::RenderWindow& window)
@@ -144,19 +117,21 @@ namespace AppleGame
 	void DrawMenuUI(UI& ui, sf::RenderWindow& window)
 	{
 		window.draw(ui.menuTitle);
-		if (!ui.firstModeSelected)
-		{
-			window.draw(ui.firstModeText);
-		}
-		else
-		{
-			window.draw(ui.secondModeText);
-		}
+		window.draw(ui.menuText);
 	}
 
 	void DrawVictoryUI(UI& ui, sf::RenderWindow& window)
 	{
 		window.draw(ui.victoryText);
 		window.draw(ui.restartText);
+	}
+
+	void DrawModeSettings(UI& ui, sf::RenderWindow& window)
+	{
+		window.draw(ui.modeSettingsText1);
+		window.draw(ui.modeSettingsText2);
+		window.draw(ui.activeModeText1);
+		window.draw(ui.activeModeText2);
+		window.draw(ui.backToMenuText);
 	}
 }

@@ -2,6 +2,7 @@
 #include <SFML/Graphics.hpp>
 #include "Settings.h"
 #include "Math.h"
+#include <vector>
 
 namespace AppleGame
 {
@@ -9,9 +10,9 @@ namespace AppleGame
 	{
 		//Aplles data
 		int numApples = MAX_APPLES;
-		Position2D* applesPositions = new Position2D[numApples];
-		sf::Sprite* sprite = new sf::Sprite[numApples];
-		bool* isAppleEaten = new bool[numApples];
+		std::vector<Position2D> applesPositions;
+		std::vector<sf::Sprite> sprite;
+		std::vector<bool> isAppleEaten;
 	};
 
 	struct Game;

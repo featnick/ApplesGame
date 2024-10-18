@@ -4,16 +4,12 @@
 #include "Math.h"
 #include <vector>
 #include <iostream>
-#include <algorithm>
 
 namespace AppleGame
 {
 	struct Rock
 	{
 		//Rocks data
-		/*Position2D rocksPosition[NUM_ROCKS];
-		sf::Sprite sprite[NUM_ROCKS];*/
-
 		std::vector<Position2D> rocksPosition;
 		std::vector<sf::Sprite> sprite;
 	};

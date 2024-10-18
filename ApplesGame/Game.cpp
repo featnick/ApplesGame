@@ -9,15 +9,13 @@ namespace AppleGame
 		game->rockTexture.loadFromFile(RESOURCES_PATH + "Rock.png");
 
 		//init all
-		InitUI(game->ui);
+		InitUI(game->ui, game);
 		InitSound(game->sound);
 	}
 
 	void DeInitGame(Game* game)
 	{
-		delete[] game->apple.applesPositions;
-		delete[] game->apple.sprite;
-		delete[] game->apple.isAppleEaten;
+
 	}
 
 	void HandleInput(Game& game)
@@ -43,9 +41,6 @@ namespace AppleGame
 
 	void Restart(Game* game)
 	{
-		//Deinitialization game
-		DeInitGame(game);
-
 		//Init player state
 		InitPlayer(game->player, *game);
 
@@ -63,84 +58,133 @@ namespace AppleGame
 		game->isVictory = false;
 	}
 
-
-	void UpdateGame(Game* game, float deltaTime)
+	void UpdatePlayingState(Game* game, float deltaTime)
 	{
-		if (!game->isMenuActive) // menu non active
+		if (!game->isGameOver && !game->isVictory)
 		{
-			if (!game->isGameOver && !game->isVictory)
+			//Update game state
+			HandleInput(*game);
+
+			// Update player state
+			UpdatePlayer(game->player, deltaTime, *game);
+
+			//Find player collisions with stones and screen borders
+			FindPlayerCollisionWithObstacles(game->player, *game);
+
+			//Find player collisions with apples
+			FindPlayerCollisionWithApples(game->player, *game);
+
+			//Find apples collisions with rocks
+			FindAppleCollisionWithRocks(game->apple, *game);
+
+			if (sf::Keyboard::isKeyPressed(sf::Keyboard::P) || sf::Keyboard::isKeyPressed(sf::Keyboard::Escape))
 			{
-				//Update game state
-				HandleInput(*game);
-
-				// Update player state
-				UpdatePlayer(game->player, deltaTime, *game);
-
-				//Find player collisions with stones and screen borders
-				FindPlayerCollisionWithObstacles(game->player, *game);
-
-				//Find player collisions with apples
-				FindPlayerCollisionWithApples(game->player, *game);
-
-				//Find apples collisions with rocks
-				FindAppleCollisionWithRocks(game->apple, *game);
-			
+				game->gameState = GameState::PauseMenu;
 			}
-			else //GAME OVER
-			{
-				//restart
-				if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space))
-				{
-					//Restart game;
-					game->isMenuActive = true;
-				}
-			}
-			UpdateUI(game->ui, *game);
-			FpsMax(*game);
-			FpsCount(*game, deltaTime);
+
 		}
-		else // menu active
+		else //GAME OVER
 		{
-			// MODES SELECTION 1 - END_APPLES mode/ENDLESS_APPLES mode, 2 - NO_ACCELERATION mode/ACCELERATION mode
-			if (!game->ui.firstModeSelected)
+			//restart
+			if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space))
 			{
-				if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num1))
-				{
-					if(ModeActive(*game, GameSettingsBits::endlessApples))
-						SwitchMode(*game, GameSettingsBits::endlessApples); //END_APPLES mode
-					game->ui.firstModeSelected = true;
-				}
-				else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num2))
-				{
-					if (!ModeActive(*game, GameSettingsBits::endlessApples))
-						SwitchMode(*game, GameSettingsBits::endlessApples); //ENDLESS_APPLES mode
-					game->ui.firstModeSelected = true;
-				}
+				//Restart game;
+				game->gameState = GameState::MainMenu;
 			}
-			else
-			{
-				game->timeSinceChoice += deltaTime;
-				if (game->timeSinceChoice > 0.5f)
-				{
-					if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num1))
-					{
-						if (ModeActive(*game, GameSettingsBits::acceleratePlayer))
-							SwitchMode(*game, GameSettingsBits::acceleratePlayer); //NO_ACCELERATION mode
-						game->ui.firstModeSelected = false;
-						Restart(game);
-						game->isMenuActive = false;
-					}
-					else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num2))
-					{
-						if (!ModeActive(*game, GameSettingsBits::acceleratePlayer))
-							SwitchMode(*game, GameSettingsBits::acceleratePlayer); //ACCELERATION mode
-						game->ui.firstModeSelected = false;
-						Restart(game);
-						game->isMenuActive = false;
-					}
-				}
-			}
-		}		
+		}
+		UpdateUI(game->ui, *game);
+		FpsCount(*game, deltaTime);
+	}
+
+	void UpdateMainMenuState(Game* game, sf::RenderWindow& window, float deltaTime)
+	{
+		sf::sleep(sf::milliseconds(50));
+
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num1))
+		{
+			Restart(game);
+			game->gameState = GameState::Playing;
+		}
+		else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num2))
+		{
+			game->gameState = GameState::ModeSettings;
+		}
+		else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num3))
+		{
+			UpdateRecordTable(game->ui, game);
+			game->gameState = GameState::RecordTable;
+		}
+		else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num4))
+		{
+			CloseGame(window);
+		}
+	}
+
+	void UpdateRecordMenuState(Game* game)
+	{
+		BackToMenu(game);
+	}
+
+	void UpdateModeSettingsState(Game* game, float deltaTime)
+	{
+		sf::sleep(sf::milliseconds(75));
+
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num1))
+		{
+			SwitchMode(*game, GameSettingsBits::endlessApples);
+		}
+		else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num2))
+		{
+			SwitchMode(*game, GameSettingsBits::acceleratePlayer);
+		}
+		UpdateSettingsUI(game->ui, *game);
+		BackToMenu(game);
+	}
+
+	void UpdatePauseMenuState(Game* game)
+	{
+		sf::sleep(sf::milliseconds(50));
+
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num1))
+		{
+			game->gameState = GameState::Playing;
+		}
+		else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num2))
+		{
+			game->gameState = GameState::MainMenu;
+		}
+	}
+
+	void UpdateGame(Game* game, float deltaTime, sf::RenderWindow& window)
+	{
+		switch (game->gameState)
+		{
+		case GameState::MainMenu:
+		{
+			UpdateMainMenuState(game, window, deltaTime);
+			break;
+		}
+		case GameState::Playing:
+		{
+			UpdatePlayingState(game, deltaTime);
+			break;
+		}
+		case GameState::RecordTable:
+		{
+			UpdateRecordMenuState(game);
+			break;
+		}
+		case GameState::ModeSettings:
+		{
+			UpdateModeSettingsState(game, deltaTime);
+			break;
+		}
+		case GameState::PauseMenu:
+		{
+			UpdatePauseMenuState(game);
+			break;
+		}
+		}
 	}
 
 	void FpsCount(Game& game, float deltaTime)
@@ -172,7 +216,10 @@ namespace AppleGame
 	//Draw game
 	void DrawGame(Game* game, sf::RenderWindow& window)
 	{
-		if (!game->isMenuActive)
+		switch (game->gameState)
+		{
+		case GameState::PauseMenu:
+		case GameState::Playing:
 		{
 			DrawPlayer(game->player, window);
 			DrawApple(game->apple, window);
@@ -187,10 +234,36 @@ namespace AppleGame
 			{
 				DrawVictoryUI(game->ui, window);
 			}
+			
+			if (game->gameState == GameState::PauseMenu)
+			{
+				DrawPauseMenu(game->ui, window);
+			}
+			break;
 		}
-		else
+		case GameState::MainMenu:
 		{
 			DrawMenuUI(game->ui, window);
+			break;
+		}
+		case GameState::RecordTable:
+		{
+			DrawRecordTable(game->ui, window);
+			break;
+		}
+		case GameState::ModeSettings:
+		{
+			DrawModeSettings(game->ui, window);
+			break;
+		}
+		}
+	}
+
+	void BackToMenu(Game* game)
+	{
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape) || sf::Keyboard::isKeyPressed(sf::Keyboard::B))
+		{
+			game->gameState = GameState::MainMenu;
 		}
 	}
 
@@ -210,5 +283,10 @@ namespace AppleGame
 	bool ModeActive(Game& game, GameSettingsBits mode)
 	{
 		return (game.gameSettings & mode) == mode;
+	}
+
+	void CloseGame(sf::RenderWindow& window)
+	{
+		window.close();
 	}
 }

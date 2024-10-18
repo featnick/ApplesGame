@@ -1,6 +1,7 @@
 #pragma once
 #include <SFML/Graphics.hpp>
 #include "Settings.h"
+#include "Math.h"
 
 namespace AppleGame
 {
@@ -12,8 +13,6 @@ namespace AppleGame
 
 	struct UI
 	{
-		bool firstModeSelected = false;
-
 		//score text data
 		sf::Font font;
 		sf::Text scoreText;
@@ -32,48 +31,48 @@ namespace AppleGame
 
 		//menu ui
 		sf::Text menuTitle;
-		sf::Text firstModeText;
-		sf::Text secondModeText;
-
+		sf::Text menuText;
+		
 		//victory text data
 		sf::Text victoryText;
 
-		//record table text
-		sf::Text namesText;
-		sf::Text recordsText;
-
+		//record table data
 		sf::Text recordTableText;
-
-		sf::String stringNames = "";
-		sf::String stringRecords = "";
-
-		PlayersRecords playersRecords[15] = {
-		{PLAYER_NAME,0},
-		{"Rona",43},
-		{"Saniel",32},
-		{"Hannard",2},
-		{"Dannedia",11},
-		{"Myrna",7},
-		{"Musoa",76},
-		{"Darz",33},
-		{"Hantha",55},
-		{"Wal",111},
-		{"Gunt",87},
-		{"Zacches",63},
-		{"Ent",25},
-		{"Zita",77},
-		{"Orka",97},
+		sf::String recordsString = "";
+		sf::Text recordsText;
+		std::multimap<std::string, int> records = {
+			{PLAYER_NAME, 0},
+			{"Alex", GetRandomInt(1,200)},
+			{"Gunt", GetRandomInt(1,200)},
+			{"Ent", GetRandomInt(1,200)},
+			{"Darz", GetRandomInt(1,200)}
 		};
+		std::multimap<int, std::string> recordsTable;
+
+		//mode settings data
+		sf::Text modeSettingsText1;
+		sf::Text modeSettingsText2;
+		sf::Text activeModeText1;
+		sf::Text activeModeText2;
+		sf::Text backToMenuText;
+		
+		//pause menu data
+		sf::Text pauseMenuText;
+		sf::RectangleShape pauseBackground;
 	};
 
+	struct Game;
 
 	static void InitText(sf::Text& text, sf::Font& font, sf::Color color, sf::String string, int size, float positionX, float positionY);
-	void ShaffleRecordArray(UI& ui);
-	void InitUI(UI& ui);
-	void UpdateRecordTable(UI& ui, const struct Game& game);
-	void UpdateUI(UI& ui, const struct Game& game);
+	void InitUI(UI& ui, Game* game);
+	void UpdateRecordTable(UI& ui, Game* game);
+	void UpdateSettingsUI(UI& ui, Game& game);
+	void UpdateUI(UI& ui, Game& game);
+	void DrawPauseMenu(UI& ui, sf::RenderWindow& window);
+	void DrawRecordTable(UI& ui, sf::RenderWindow& window);
 	void DrawGameUI(UI& ui, sf::RenderWindow& window);
 	void DrawGameOverUI(UI& ui, sf::RenderWindow& window);
 	void DrawMenuUI(UI& ui, sf::RenderWindow& window);
 	void DrawVictoryUI(UI& ui, sf::RenderWindow& window);
+	void DrawModeSettings(UI& ui, sf::RenderWindow& window);
 }

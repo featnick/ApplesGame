@@ -8,9 +8,9 @@ namespace AppleGame
 		apple.numApples = GetRandomInt(MIN_APPLES, MAX_APPLES);
 
 		//Init apples
-		apple.applesPositions = new Position2D[apple.numApples];
-		apple.sprite = new sf::Sprite[apple.numApples];
-		apple.isAppleEaten = new bool[apple.numApples];
+		apple.applesPositions.resize(apple.numApples);
+		apple.sprite.resize(apple.numApples);
+		apple.isAppleEaten.resize(apple.numApples);
 
 		for (int i = 0; i < apple.numApples; ++i)
 		{

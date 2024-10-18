@@ -22,6 +22,8 @@ int main()
 	// main loop
 	while (window.isOpen())
 	{
+		FpsMax(*game);
+
 		//Calculate time delta
 		float currentTime = gameClock.getElapsedTime().asSeconds();
 		float deltaTime = currentTime - lastTime;
@@ -31,7 +33,7 @@ int main()
 		sf::Event event;
 		while (window.pollEvent(event))
 		{
-			if (event.type == sf::Event::Closed || sf::Keyboard::isKeyPressed(sf::Keyboard::Escape))
+			if (event.type == sf::Event::Closed)
 			{
 				window.close();
 				break;
@@ -39,7 +41,7 @@ int main()
 		}
 
 		//Update game state
-		UpdateGame(game, deltaTime);
+		UpdateGame(game, deltaTime, window);
 		
 		//Draw game
 		//Draw everything
@@ -47,7 +49,6 @@ int main()
 		DrawGame(game, window);
 		window.display();
 	}
-	DeInitGame(game);
 	delete game;
 
 	return 0;
